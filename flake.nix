@@ -17,7 +17,7 @@
         pname = "upower-notify";
         version = "0.1.0";
         src = ./.;
-        vendorHash = "sha256-ODCJcLUGvS2XvK4EuCJu69Kq8bT+iJRwdBPD3qQkqtY=";
+        vendorHash = "sha256-fqIa6n49xl3MgS4MShDsfVKyiQUt506XW0MYG8yrwwc=";
         proxyVendor = true;
 
         meta = {

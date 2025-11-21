@@ -8,7 +8,7 @@ package notify
 import (
 	"errors"
 
-	"github.com/godbus/dbus"
+	"github.com/godbus/dbus/v5"
 )
 
 var NoNotifications = errors.New("Couldn't get org.freedesktop.Notifications")
