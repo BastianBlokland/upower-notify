@@ -9,7 +9,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/godbus/dbus"
+	"github.com/godbus/dbus/v5"
 )
 
 var NoUpower = errors.New("Couldn't get org.freedesktop.UPower")
