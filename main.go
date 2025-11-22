@@ -71,7 +71,7 @@ func main() {
 			default:
 				notifyStep = 20
 			}
-			if ((old.State != update.State) || (uint32(update.Percentage)/notifyStep) != (uint32(lastNotifyPercentage)/notifyStep)) {
+			if (old.State != update.State) || (uint32(update.Percentage)/notifyStep) != (uint32(lastNotifyPercentage)/notifyStep) {
 				notifyState(update, notifier)
 				lastNotifyPercentage = update.Percentage
 			}
@@ -107,23 +107,30 @@ func notifyState(battery upower.Update, notifier *notify.Notifier) {
 	var invalidState bool = false
 	switch battery.State {
 	case upower.Charging, upower.FullCharged, upower.PendingDischarge:
-		msg = fmt.Sprintf("%.0f%% %s\n%s until full\n%.1f W usage",
-			battery.Percentage,
-			battery.State,
-			formatDuration(battery.TimeToFull),
-			battery.EnergyRate)
+		msg = fmt.Sprintf("%.0f%% %s", battery.Percentage, battery.State)
+		var strTillFull = formatDuration(battery.TimeToFull)
+		if len(strTillFull) != 0 {
+			msg += fmt.Sprintf("\n%s until full", strTillFull)
+		}
+		if battery.EnergyRate != 0.0 {
+			msg += fmt.Sprintf("\n%.1f W usage", battery.EnergyRate)
+		}
 		break
 	case upower.Empty:
-		msg = fmt.Sprintf("%.0f%%\n%.1f W usage",
-			battery.Percentage,
-			battery.EnergyRate)
+		msg = fmt.Sprintf("%.0f%%", battery.Percentage)
+		if battery.EnergyRate != 0.0 {
+			msg += fmt.Sprintf("\n%.1f W usage", battery.EnergyRate)
+		}
 		break
 	case upower.Discharging, upower.PendingCharge:
-		msg = fmt.Sprintf("%.0f%% %s\n%s until empty\n%.1f W usage",
-			battery.Percentage,
-			battery.State,
-			formatDuration(battery.TimeToEmpty),
-			battery.EnergyRate)
+		msg = fmt.Sprintf("%.0f%% %s", battery.Percentage, battery.State)
+		var strTillEmpty = formatDuration(battery.TimeToEmpty)
+		if len(strTillEmpty) != 0 {
+			msg += fmt.Sprintf("\n%s until empty", strTillEmpty)
+		}
+		if battery.EnergyRate != 0.0 {
+			msg += fmt.Sprintf("\n%.1f W usage", battery.EnergyRate)
+		}
 		break
 	default:
 		msg = fmt.Sprintf("%.0f%% Invalid State", battery.Percentage)
