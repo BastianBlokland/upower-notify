@@ -6,14 +6,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/omeid/upower-notify/notify"
-	"github.com/omeid/upower-notify/upower"
+	"github.com/bastianblokland/upower-notify/notify"
+	"github.com/bastianblokland/upower-notify/upower"
 )
-
-func init() {
-	//See the notes in "github.com/omeid/upower-notify/upower"
-	//This setting is for HP Envy series late 2012.
-}
 
 var (
 	tick               time.Duration

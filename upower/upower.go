@@ -17,9 +17,7 @@ var NoUpower = errors.New("Couldn't get org.freedesktop.UPower")
 type State int
 
 const (
-	//This order is incosistant it seems, this is listed according to:
-	// But it is different, at least in my HP laptop, thus thus they have
-	// been set to variables. Feel free to change them.
+	// This order is inconsistent it seems. Feel free to change them.
 	Unknown State = iota
 	Charging
 	Discharging

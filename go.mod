@@ -1,4 +1,4 @@
-module github.com/omeid/upower-notify
+module github.com/bastianblokland/upower-notify
 
 go 1.22.3
 

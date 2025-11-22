@@ -1,8 +1,8 @@
+# Fork of: github.com/omeid/upower-notify for personal use.
+
 # UPower-Notify
 
-
 A simple tool to give you Desktop Notifications about your battery, requires UPower.
-
 
 # Usage
 
@@ -23,7 +23,6 @@ Usage of upower-notify:
     	Time to start warning. (Warn) (default 20m0s)
 ```
 
-if you're using `i3wm` or relatives, just chuck this or it's equalent in your startup script:
-
+if you're using `i3wm` or relatives, just chuck this or it's equivalent in your startup script:
 
 `exec --no-startup-id "upower-notify"`
