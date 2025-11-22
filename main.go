@@ -13,8 +13,6 @@ import (
 var (
 	initialOnly        bool
 	tick               time.Duration
-	warn               time.Duration
-	critical           time.Duration
 	notificationExpiry time.Duration
 	device             string
 
@@ -25,8 +23,6 @@ func main() {
 
 	flag.BoolVar(&initialOnly, "initialOnly", false, "Exit after sending the initial notification.")
 	flag.DurationVar(&tick, "tick", 10*time.Second, "Update rate.")
-	flag.DurationVar(&warn, "warn", 20*time.Minute, "Time to start warning (Warn).")
-	flag.DurationVar(&critical, "critical", 10*time.Minute, "Time to start warning (Critical).")
 	flag.DurationVar(&notificationExpiry, "notification-expiration", 10*time.Second, "Notifications expiry duration.")
 	flag.StringVar(&device, "device", "DisplayDevice", "DBus device name for the battery.")
 	flag.Parse()
@@ -64,9 +60,9 @@ func main() {
 		if update.Changed(old) {
 			var notifyStep uint32
 			switch {
-			case update.TimeToEmpty < critical:
+			case update.Percentage < 10:
 				notifyStep = 1
-			case update.TimeToEmpty < warn:
+			case update.Percentage < 20:
 				notifyStep = 5
 			default:
 				notifyStep = 20
@@ -137,7 +133,7 @@ func notifyState(battery upower.Update, notifier *notify.Notifier) {
 		invalidState = true
 		break
 	}
-	if invalidState || battery.TimeToEmpty < critical || battery.Percentage < 10 {
+	if invalidState || battery.Percentage < 10 {
 		notifier.Critical("Battery", msg, notificationExpiryMilliseconds)
 	} else {
 		notifier.Normal("Battery", msg, notificationExpiryMilliseconds)
