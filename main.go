@@ -55,14 +55,26 @@ func main() {
 	}
 
 	var old = update
+	var lastNotifyPercentage = old.Percentage
 	for range time.Tick(tick) {
 		update, err = up.Get()
 		if err != nil {
-			notifier.Critical("Battery", fmt.Sprintf("Failed to query status: %s", err), notificationExpiryMilliseconds)
-			fmt.Printf("Failed to query status")
+			notifier.Critical("Battery", fmt.Sprintf("Query failed: %s", err), notificationExpiryMilliseconds)
 		}
 		if update.Changed(old) {
-			sendNotify(update, notifier, old.State != update.State)
+			var notifyStep uint32
+			switch {
+			case update.TimeToEmpty < critical:
+				notifyStep = 1
+			case update.TimeToEmpty < warn:
+				notifyStep = 5
+			default:
+				notifyStep = 20
+			}
+			if ((old.State != update.State) || (uint32(update.Percentage)/notifyStep) != (uint32(lastNotifyPercentage)/notifyStep)) {
+				notifyState(update, notifier)
+				lastNotifyPercentage = update.Percentage
+			}
 		}
 		old = update
 	}
@@ -91,46 +103,36 @@ func formatDuration(d time.Duration) string {
 }
 
 func notifyState(battery upower.Update, notifier *notify.Notifier) {
-	if battery.State == upower.Charging || battery.State == upower.FullCharged {
-		notifier.Normal("Battery",
-			fmt.Sprintf("%.0f%% %s\n%s until full\n%.1f W usage",
-				battery.Percentage,
-				battery.State,
-				formatDuration(battery.TimeToFull),
-				battery.EnergyRate),
-			notificationExpiryMilliseconds)
-	} else {
-		notifier.Normal("Battery",
-			fmt.Sprintf("%.0f%% %s\n%s until empty\n%.1f W usage",
-				battery.Percentage,
-				battery.State,
-				formatDuration(battery.TimeToEmpty),
-				battery.EnergyRate),
-			notificationExpiryMilliseconds)
-	}
-}
-
-func sendNotify(battery upower.Update, notifier *notify.Notifier, changed bool) {
-	if changed {
-		notifier.Normal("Battery", fmt.Sprintf("Battery state changed, %s.", battery.State), notificationExpiryMilliseconds)
-	}
-
+	var msg string
+	var invalidState bool = false
 	switch battery.State {
-	case upower.Charging:
-	case upower.Discharging:
-		switch {
-		case battery.TimeToEmpty < critical:
-			notifier.Critical("Battery", fmt.Sprintf("Battery level critical, %s remaining.", battery.TimeToEmpty), notificationExpiryMilliseconds)
-			time.Sleep(critical / 10)
-		case battery.TimeToEmpty < warn:
-			notifier.Normal("Battery", fmt.Sprintf("Battery level low, %s remaining.", battery.TimeToEmpty), notificationExpiryMilliseconds)
-			time.Sleep(warn / 10)
-		default:
-		}
+	case upower.Charging, upower.FullCharged, upower.PendingDischarge:
+		msg = fmt.Sprintf("%.0f%% %s\n%s until full\n%.1f W usage",
+			battery.Percentage,
+			battery.State,
+			formatDuration(battery.TimeToFull),
+			battery.EnergyRate)
+		break
 	case upower.Empty:
-		notifier.Critical("Battery", fmt.Sprintf("Battery exhausted, %s remaining.", battery.TimeToEmpty), notificationExpiryMilliseconds)
-	case upower.FullCharged, upower.PendingCharge, upower.PendingDischarge:
+		msg = fmt.Sprintf("%.0f%%\n%.1f W usage",
+			battery.Percentage,
+			battery.EnergyRate)
+		break
+	case upower.Discharging, upower.PendingCharge:
+		msg = fmt.Sprintf("%.0f%% %s\n%s until empty\n%.1f W usage",
+			battery.Percentage,
+			battery.State,
+			formatDuration(battery.TimeToEmpty),
+			battery.EnergyRate)
+		break
 	default:
-		notifier.Critical("Battery", "Failed to query battery state.", notificationExpiryMilliseconds)
+		msg = fmt.Sprintf("%.0f%% Invalid State", battery.Percentage)
+		invalidState = true
+		break
+	}
+	if invalidState || battery.TimeToEmpty < critical || battery.Percentage < 10 {
+		notifier.Critical("Battery", msg, notificationExpiryMilliseconds)
+	} else {
+		notifier.Normal("Battery", msg, notificationExpiryMilliseconds)
 	}
 }
