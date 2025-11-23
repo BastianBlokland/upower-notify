@@ -1,4 +1,4 @@
-module github.com/bastianblokland/upower-notify
+module upower-notify
 
 go 1.22.3
 

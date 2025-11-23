@@ -6,8 +6,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/bastianblokland/upower-notify/notify"
-	"github.com/bastianblokland/upower-notify/upower"
+	"upower-notify/notify"
+	"upower-notify/upower"
+	"upower-notify/ppd"
 )
 
 var (
@@ -29,7 +30,6 @@ func main() {
 
 	notificationExpiryMilliseconds = int32(notificationExpiry / time.Millisecond)
 	up, err := upower.New(device)
-
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -39,25 +39,42 @@ func main() {
 		log.Fatal(err)
 	}
 
+	powerProfileDaemon, err := ppd.New()
+	var profileState ppd.State
+	if powerProfileDaemon != nil {
+		profileState, err = powerProfileDaemon.Get();
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
 	notifier, err := notify.New("Upower Agent")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	notifyState(update, notifier)
+	notifyState(update, profileState, notifier)
 
 	if initialOnly {
 		return
 	}
 
 	var old = update
+	var oldProfileState = profileState
 	var lastNotifyPercentage = old.Percentage
 	for range time.Tick(tick) {
 		update, err = up.Get()
 		if err != nil {
 			notifier.Critical("Battery", fmt.Sprintf("Query failed: %s", err), notificationExpiryMilliseconds)
 		}
-		if update.Changed(old) {
+		if powerProfileDaemon != nil {
+			profileState, err = powerProfileDaemon.Get();
+			if err != nil {
+				notifier.Critical("Battery", fmt.Sprintf("Profile (PPD) query failed: %s", err), notificationExpiryMilliseconds)
+			}
+		}
+
+		if update.Changed(old) || profileState.Changed(oldProfileState) {
 			var charging = update.State == upower.Charging || update.State == upower.FullCharged
 
 			var notifyStep uint32
@@ -69,12 +86,18 @@ func main() {
 			default:
 				notifyStep = 20
 			}
-			if (old.State != update.State) || (uint32(update.Percentage)/notifyStep) != (uint32(lastNotifyPercentage)/notifyStep) {
-				notifyState(update, notifier)
+
+			stateChanged := update.State != old.State
+			profileChanged := profileState.ActiveProfile != oldProfileState.ActiveProfile
+			percentageChanged := (uint32(update.Percentage)/notifyStep) != (uint32(lastNotifyPercentage)/notifyStep);
+
+			if stateChanged || profileChanged || percentageChanged {
+				notifyState(update, profileState, notifier)
 				lastNotifyPercentage = update.Percentage
 			}
 		}
 		old = update
+		oldProfileState = profileState
 	}
 }
 
@@ -100,7 +123,7 @@ func formatDuration(d time.Duration) string {
 	return result
 }
 
-func notifyState(battery upower.Update, notifier *notify.Notifier) {
+func notifyState(battery upower.Update, profileState ppd.State, notifier *notify.Notifier) {
 	var msg string
 	var invalidState bool = false
 	switch battery.State {
@@ -134,6 +157,9 @@ func notifyState(battery upower.Update, notifier *notify.Notifier) {
 		msg = fmt.Sprintf("%.0f%% Invalid State", battery.Percentage)
 		invalidState = true
 		break
+	}
+	if len(profileState.ActiveProfile) > 0 {
+		msg += fmt.Sprintf(" (%s profile)", profileState.ActiveProfile)
 	}
 	if invalidState || battery.Percentage < 10 {
 		notifier.Critical("Battery", msg, notificationExpiryMilliseconds)
