@@ -21,7 +21,7 @@
         proxyVendor = true;
 
         meta = {
-          description = "Fork of: https://github.com/omeid/upower-notify for personal use";
+          description = "Fork of: https://github.com/omeid/upower-notify for personal use.";
           mainProgram = "upower-notify";
         };
       };

@@ -58,11 +58,13 @@ func main() {
 			notifier.Critical("Battery", fmt.Sprintf("Query failed: %s", err), notificationExpiryMilliseconds)
 		}
 		if update.Changed(old) {
+			var charging = update.State == upower.Charging || update.State == upower.FullCharged
+
 			var notifyStep uint32
 			switch {
-			case update.Percentage < 10:
+			case !charging && update.Percentage < 10:
 				notifyStep = 1
-			case update.Percentage < 20:
+			case !charging && update.Percentage < 20:
 				notifyStep = 5
 			default:
 				notifyStep = 20
