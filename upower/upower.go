@@ -6,14 +6,11 @@
 package upower
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
 	"github.com/godbus/dbus/v5"
 )
-
-var NoUpower = errors.New("Couldn't get org.freedesktop.UPower")
 
 type State int
 
@@ -39,14 +36,10 @@ func (s *Update) Changed(old Update) bool {
 	return *s != old
 }
 
-func New(conn *dbus.Conn, device string) (*UPower, error) {
+func New(conn *dbus.Conn, device string) *UPower {
 	path := dbus.ObjectPath("/org/freedesktop/UPower/devices/" + device)
 	up := conn.Object("org.freedesktop.UPower", path)
-	if up == nil {
-		return nil, NoUpower
-	}
-
-	return &UPower{path: path, dbus: up}, nil
+	return &UPower{path: path, dbus: up}
 }
 
 type UPower struct {

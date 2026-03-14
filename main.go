@@ -50,29 +50,22 @@ func main() {
 		log.Fatal(err)
 	}
 
-	up, err := upower.New(dbusConnSystem, device)
-	if err != nil {
-		log.Fatal(err)
-	}
+	up := upower.New(dbusConnSystem, device)
 
 	update, err := up.Get()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	powerProfileDaemon, err := ppd.New(dbusConnSystem)
+	powerProfileDaemon := ppd.New(dbusConnSystem)
 	var profileState ppd.State
-	if powerProfileDaemon != nil {
-		profileState, err = powerProfileDaemon.Get()
-		if err != nil {
-			log.Fatal(err)
-		}
+	profileState, err = powerProfileDaemon.Get()
+	if err != nil {
+		// PPD is optional; if unavailable treat it as absent.
+		powerProfileDaemon = nil
 	}
 
-	notifier, err := notify.New(dbusConnSession, "Upower Notify")
-	if err != nil {
-		log.Fatal(err)
-	}
+	notifier := notify.New(dbusConnSession, "Upower Notify")
 
 	notifyState(update, profileState, notifier)
 

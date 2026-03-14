@@ -6,12 +6,8 @@
 package notify
 
 import (
-	"errors"
-
 	"github.com/godbus/dbus/v5"
 )
-
-var NoNotifications = errors.New("Couldn't get org.freedesktop.Notifications")
 
 type Urgency byte
 
@@ -26,25 +22,21 @@ type Notifier struct {
 	app  string
 }
 
-func New(conn *dbus.Conn, app string) (*Notifier, error) {
+func New(conn *dbus.Conn, app string) *Notifier {
 	notification := conn.Object("org.freedesktop.Notifications", "/org/freedesktop/Notifications")
-	if notification == nil {
-		return nil, NoNotifications
-	}
-
-	return &Notifier{dbus: notification, app: app}, nil
+	return &Notifier{dbus: notification, app: app}
 }
 
-func (n *Notifier) Low(Summary string, Body string, ExpireTimeout int32) error {
-	return n.Send(Summary, Body, Low, ExpireTimeout)
+func (n *Notifier) Low(summary string, body string, expireTimeout int32) error {
+	return n.Send(summary, body, Low, expireTimeout)
 }
 
-func (n *Notifier) Normal(Summary string, Body string, ExpireTimeout int32) error {
-	return n.Send(Summary, Body, Normal, ExpireTimeout)
+func (n *Notifier) Normal(summary string, body string, expireTimeout int32) error {
+	return n.Send(summary, body, Normal, expireTimeout)
 }
 
-func (n *Notifier) Critical(Summary string, Body string, ExpireTimeout int32) error {
-	return n.Send(Summary, Body, Critical, ExpireTimeout)
+func (n *Notifier) Critical(summary string, body string, expireTimeout int32) error {
+	return n.Send(summary, body, Critical, expireTimeout)
 }
 
 func (n *Notifier) Send(summary string, body string, urgency Urgency, expireTimeout int32) error {

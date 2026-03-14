@@ -9,7 +9,6 @@ import (
 	"github.com/godbus/dbus/v5"
 )
 
-var NoPowerProfileDaemon = errors.New("Couldn't get net.hadess.PowerProfiles")
 var MalformedResponse = errors.New("Invalid response from PPD")
 
 type State struct {
@@ -20,13 +19,10 @@ type PowerProfileDaemon struct {
 	dbus dbus.BusObject
 }
 
-func New(conn *dbus.Conn) (*PowerProfileDaemon, error) {
+func New(conn *dbus.Conn) *PowerProfileDaemon {
 	path := dbus.ObjectPath("/net/hadess/PowerProfiles")
 	obj := conn.Object("net.hadess.PowerProfiles", path)
-	if obj == nil {
-		return nil, NoPowerProfileDaemon
-	}
-	return &PowerProfileDaemon{dbus: obj}, nil
+	return &PowerProfileDaemon{dbus: obj}
 }
 
 func (s *State) Changed(old State) bool {
