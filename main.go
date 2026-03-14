@@ -80,7 +80,7 @@ func main() {
 		}
 
 		if update.Changed(old) || profileState.Changed(oldProfileState) {
-			var charging = update.State == upower.Charging || update.State == upower.FullCharged
+			var charging = update.State == upower.Charging || update.State == upower.FullCharged || update.State == upower.PendingCharge
 
 			var notifyStep uint32
 			switch {
@@ -132,7 +132,7 @@ func notifyState(battery upower.Update, profileState ppd.State, notifier *notify
 	var msg string
 	var invalidState bool = false
 	switch battery.State {
-	case upower.Charging, upower.FullCharged, upower.PendingDischarge:
+	case upower.Charging, upower.FullCharged, upower.PendingCharge, upower.PendingDischarge:
 		msg = fmt.Sprintf("%.0f%% %s", battery.Percentage, battery.State)
 		var strTillFull = formatDuration(battery.TimeToFull)
 		if len(strTillFull) != 0 {
@@ -148,7 +148,7 @@ func notifyState(battery upower.Update, profileState ppd.State, notifier *notify
 			msg += fmt.Sprintf("\n%.1f W usage", battery.EnergyRate)
 		}
 		break
-	case upower.Discharging, upower.PendingCharge:
+	case upower.Discharging:
 		msg = fmt.Sprintf("%.0f%% %s", battery.Percentage, battery.State)
 		var strTillEmpty = formatDuration(battery.TimeToEmpty)
 		if len(strTillEmpty) != 0 {
