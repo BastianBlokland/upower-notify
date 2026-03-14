@@ -195,8 +195,8 @@ type UPower struct {
 	dbus dbus.BusObject
 }
 
-func getProp[T any](probs map[string]dbus.Variant, key string) (T, error) {
-	v, ok := probs[key].Value().(T)
+func getProp[T any](props map[string]dbus.Variant, key string) (T, error) {
+	v, ok := props[key].Value().(T)
 	if !ok {
 		var zero T
 		return zero, fmt.Errorf("unexpected type for %s", key)
@@ -205,9 +205,9 @@ func getProp[T any](probs map[string]dbus.Variant, key string) (T, error) {
 }
 
 func (u *UPower) Get() (Update, error) {
-	probs := map[string]dbus.Variant{}
+	props := map[string]dbus.Variant{}
 	update := Update{}
-	err := u.dbus.Call("org.freedesktop.DBus.Properties.GetAll", 0, "org.freedesktop.UPower.Device").Store(&probs)
+	err := u.dbus.Call("org.freedesktop.DBus.Properties.GetAll", 0, "org.freedesktop.UPower.Device").Store(&props)
 	if err != nil {
 		return update, err
 	}
@@ -215,91 +215,91 @@ func (u *UPower) Get() (Update, error) {
 	var stateRaw uint32
 	var timeToEmpty, timeToFull int64
 
-	if update.Capacity, err = getProp[float64](probs, "Capacity"); err != nil {
+	if update.Capacity, err = getProp[float64](props, "Capacity"); err != nil {
 		return update, err
 	}
-	if update.Energy, err = getProp[float64](probs, "Energy"); err != nil {
+	if update.Energy, err = getProp[float64](props, "Energy"); err != nil {
 		return update, err
 	}
-	if update.EnergyEmpty, err = getProp[float64](probs, "EnergyEmpty"); err != nil {
+	if update.EnergyEmpty, err = getProp[float64](props, "EnergyEmpty"); err != nil {
 		return update, err
 	}
-	if update.EnergyFull, err = getProp[float64](probs, "EnergyFull"); err != nil {
+	if update.EnergyFull, err = getProp[float64](props, "EnergyFull"); err != nil {
 		return update, err
 	}
-	if update.EnergyFullDesign, err = getProp[float64](probs, "EnergyFullDesign"); err != nil {
+	if update.EnergyFullDesign, err = getProp[float64](props, "EnergyFullDesign"); err != nil {
 		return update, err
 	}
-	if update.EnergyRate, err = getProp[float64](probs, "EnergyRate"); err != nil {
+	if update.EnergyRate, err = getProp[float64](props, "EnergyRate"); err != nil {
 		return update, err
 	}
-	if update.HasHistory, err = getProp[bool](probs, "HasHistory"); err != nil {
+	if update.HasHistory, err = getProp[bool](props, "HasHistory"); err != nil {
 		return update, err
 	}
-	if update.HasStatistics, err = getProp[bool](probs, "HasStatistics"); err != nil {
+	if update.HasStatistics, err = getProp[bool](props, "HasStatistics"); err != nil {
 		return update, err
 	}
-	if update.IconName, err = getProp[string](probs, "IconName"); err != nil {
+	if update.IconName, err = getProp[string](props, "IconName"); err != nil {
 		return update, err
 	}
-	if update.IsPresent, err = getProp[bool](probs, "IsPresent"); err != nil {
+	if update.IsPresent, err = getProp[bool](props, "IsPresent"); err != nil {
 		return update, err
 	}
-	if update.IsRechargeable, err = getProp[bool](probs, "IsRechargeable"); err != nil {
+	if update.IsRechargeable, err = getProp[bool](props, "IsRechargeable"); err != nil {
 		return update, err
 	}
-	if update.Luminosity, err = getProp[float64](probs, "Luminosity"); err != nil {
+	if update.Luminosity, err = getProp[float64](props, "Luminosity"); err != nil {
 		return update, err
 	}
-	if update.Model, err = getProp[string](probs, "Model"); err != nil {
+	if update.Model, err = getProp[string](props, "Model"); err != nil {
 		return update, err
 	}
-	if update.NativePath, err = getProp[string](probs, "NativePath"); err != nil {
+	if update.NativePath, err = getProp[string](props, "NativePath"); err != nil {
 		return update, err
 	}
-	if update.Online, err = getProp[bool](probs, "Online"); err != nil {
+	if update.Online, err = getProp[bool](props, "Online"); err != nil {
 		return update, err
 	}
-	if update.Percentage, err = getProp[float64](probs, "Percentage"); err != nil {
+	if update.Percentage, err = getProp[float64](props, "Percentage"); err != nil {
 		return update, err
 	}
-	if update.PowerSupply, err = getProp[bool](probs, "PowerSupply"); err != nil {
+	if update.PowerSupply, err = getProp[bool](props, "PowerSupply"); err != nil {
 		return update, err
 	}
-	if update.Serial, err = getProp[string](probs, "Serial"); err != nil {
+	if update.Serial, err = getProp[string](props, "Serial"); err != nil {
 		return update, err
 	}
-	if stateRaw, err = getProp[uint32](probs, "State"); err != nil {
+	if stateRaw, err = getProp[uint32](props, "State"); err != nil {
 		return update, err
 	}
 	update.State = State(stateRaw)
-	if update.Technology, err = getProp[uint32](probs, "Technology"); err != nil {
+	if update.Technology, err = getProp[uint32](props, "Technology"); err != nil {
 		return update, err
 	}
-	if update.Temperature, err = getProp[float64](probs, "Temperature"); err != nil {
+	if update.Temperature, err = getProp[float64](props, "Temperature"); err != nil {
 		return update, err
 	}
-	if timeToEmpty, err = getProp[int64](probs, "TimeToEmpty"); err != nil {
+	if timeToEmpty, err = getProp[int64](props, "TimeToEmpty"); err != nil {
 		return update, err
 	}
 	update.TimeToEmpty = time.Duration(timeToEmpty) * time.Second
-	if timeToFull, err = getProp[int64](probs, "TimeToFull"); err != nil {
+	if timeToFull, err = getProp[int64](props, "TimeToFull"); err != nil {
 		return update, err
 	}
 	update.TimeToFull = time.Duration(timeToFull) * time.Second
-	if update.Type, err = getProp[uint32](probs, "Type"); err != nil {
+	if update.Type, err = getProp[uint32](props, "Type"); err != nil {
 		return update, err
 	}
-	if update.UpdateTime, err = getProp[uint64](probs, "UpdateTime"); err != nil {
+	if update.UpdateTime, err = getProp[uint64](props, "UpdateTime"); err != nil {
 		return update, err
 	}
-	if update.Vendor, err = getProp[string](probs, "Vendor"); err != nil {
+	if update.Vendor, err = getProp[string](props, "Vendor"); err != nil {
 		return update, err
 	}
-	if update.Voltage, err = getProp[float64](probs, "Voltage"); err != nil {
+	if update.Voltage, err = getProp[float64](props, "Voltage"); err != nil {
 		return update, err
 	}
-	if update.WarningLevel, err = getProp[uint32](probs, "WarningLevel"); err != nil {
+	if update.WarningLevel, err = getProp[uint32](props, "WarningLevel"); err != nil {
 		return update, err
 	}
 
