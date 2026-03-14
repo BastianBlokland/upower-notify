@@ -37,12 +37,7 @@ type Notifier struct {
 	app  string
 }
 
-func New(app string) (*Notifier, error) {
-
-	conn, err := dbus.SessionBus()
-	if err != nil {
-		return nil, err
-	}
+func New(conn *dbus.Conn, app string) (*Notifier, error) {
 	notification := conn.Object("org.freedesktop.Notifications", "/org/freedesktop/Notifications")
 	if notification == nil {
 		return nil, NoNotifications

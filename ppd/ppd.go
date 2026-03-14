@@ -20,11 +20,7 @@ type PowerProfileDaemon struct {
 	dbus dbus.BusObject
 }
 
-func New() (*PowerProfileDaemon, error) {
-	conn, err := dbus.SystemBus()
-	if err != nil {
-		return nil, err
-	}
+func New(conn *dbus.Conn) (*PowerProfileDaemon, error) {
 	path := dbus.ObjectPath("/net/hadess/PowerProfiles")
 	obj := conn.Object("net.hadess.PowerProfiles", path)
 	if obj == nil {
@@ -35,6 +31,15 @@ func New() (*PowerProfileDaemon, error) {
 
 func (s *State) Changed(old State) bool {
 	return s.ActiveProfile != old.ActiveProfile
+}
+
+func (p *PowerProfileDaemon) AddMatchSignal(conn *dbus.Conn) error {
+	return conn.AddMatchSignal(
+		dbus.WithMatchInterface("org.freedesktop.DBus.Properties"),
+		dbus.WithMatchMember("PropertiesChanged"),
+		dbus.WithMatchObjectPath("/net/hadess/PowerProfiles"),
+		dbus.WithMatchArg(0, "net.hadess.PowerProfiles"),
+	)
 }
 
 func (ppd *PowerProfileDaemon) Get() (State, error) {

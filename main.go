@@ -6,9 +6,11 @@ import (
 	"log"
 	"time"
 
+	"github.com/godbus/dbus/v5"
+
+	"upower-notify/ppd"
 	"upower-notify/notify"
 	"upower-notify/upower"
-	"upower-notify/ppd"
 )
 
 const (
@@ -31,13 +33,24 @@ var (
 func main() {
 
 	flag.BoolVar(&initialOnly, "initialOnly", false, "Exit after sending the initial notification.")
-	flag.DurationVar(&tick, "tick", 10*time.Second, "Update rate.")
+	flag.DurationVar(&tick, "tick", 60*time.Second, "Update rate.")
 	flag.DurationVar(&notificationExpiry, "notification-expiration", 10*time.Second, "Notifications expiry duration.")
 	flag.StringVar(&device, "device", "DisplayDevice", "DBus device name for the battery.")
 	flag.Parse()
 
 	notificationExpiryMilliseconds = int32(notificationExpiry / time.Millisecond)
-	up, err := upower.New(device)
+
+	dbusConnSystem, err := dbus.SystemBus()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	dbusConnSession, err := dbus.SessionBus()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	up, err := upower.New(dbusConnSystem, device)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -47,7 +60,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	powerProfileDaemon, err := ppd.New()
+	powerProfileDaemon, err := ppd.New(dbusConnSystem)
 	var profileState ppd.State
 	if powerProfileDaemon != nil {
 		profileState, err = powerProfileDaemon.Get()
@@ -56,7 +69,7 @@ func main() {
 		}
 	}
 
-	notifier, err := notify.New("Upower Agent")
+	notifier, err := notify.New(dbusConnSession, "Upower Notify")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -67,10 +80,27 @@ func main() {
 		return
 	}
 
+	dbusSignals := make(chan *dbus.Signal, 16)
+	dbusConnSystem.Signal(dbusSignals)
+	if err := up.AddMatchSignal(dbusConnSystem); err != nil {
+		log.Fatal(err)
+	}
+	if powerProfileDaemon != nil {
+		if err := powerProfileDaemon.AddMatchSignal(dbusConnSystem); err != nil {
+			log.Fatal(err)
+		}
+	}
+
 	var old = update
 	var oldProfileState = profileState
 	var lastNotifyPercentage = old.Percentage
-	for range time.Tick(tick) {
+	poll := time.NewTicker(tick)
+	for {
+		select {
+		case <-dbusSignals:
+		case <-poll.C:
+		}
+
 		newUpdate, err := up.Get()
 		if err != nil {
 			notifier.Critical("Battery", fmt.Sprintf("Query failed: %s", err), notificationExpiryMilliseconds)

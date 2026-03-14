@@ -39,23 +39,28 @@ func (s *Update) Changed(old Update) bool {
 	return *s != old
 }
 
-func New(device string) (*UPower, error) {
-	conn, err := dbus.SystemBus()
-	if err != nil {
-		return nil, err
-	}
-
+func New(conn *dbus.Conn, device string) (*UPower, error) {
 	path := dbus.ObjectPath("/org/freedesktop/UPower/devices/" + device)
 	up := conn.Object("org.freedesktop.UPower", path)
 	if up == nil {
 		return nil, NoUpower
 	}
 
-	return &UPower{dbus: up}, nil
+	return &UPower{path: path, dbus: up}, nil
 }
 
 type UPower struct {
+	path dbus.ObjectPath
 	dbus dbus.BusObject
+}
+
+func (u *UPower) AddMatchSignal(conn *dbus.Conn) error {
+	return conn.AddMatchSignal(
+		dbus.WithMatchInterface("org.freedesktop.DBus.Properties"),
+		dbus.WithMatchMember("PropertiesChanged"),
+		dbus.WithMatchObjectPath(u.path),
+		dbus.WithMatchArg(0, "org.freedesktop.UPower.Device"),
+	)
 }
 
 func getProp[T any](props map[string]dbus.Variant, key string) (T, error) {
