@@ -40,7 +40,6 @@ func (s *Update) Changed(old Update) bool {
 }
 
 func New(device string) (*UPower, error) {
-
 	conn, err := dbus.SystemBus()
 	if err != nil {
 		return nil, err

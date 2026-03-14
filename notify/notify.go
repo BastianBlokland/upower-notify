@@ -34,8 +34,7 @@ type Message struct {
 
 type Notifier struct {
 	dbus dbus.BusObject
-
-	app string
+	app  string
 }
 
 func New(app string) (*Notifier, error) {
