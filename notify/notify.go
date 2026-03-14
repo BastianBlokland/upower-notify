@@ -21,17 +21,6 @@ const (
 	Critical
 )
 
-type Message struct {
-	AppName       string
-	ReplacesId    uint32
-	AppIcon       string
-	Summary       string
-	Body          string
-	Actions       []string
-	Hints         map[string]dbus.Variant
-	ExpireTimeout int32
-}
-
 type Notifier struct {
 	dbus dbus.BusObject
 	app  string
@@ -58,28 +47,15 @@ func (n *Notifier) Critical(Summary string, Body string, ExpireTimeout int32) er
 	return n.Send(Summary, Body, Critical, ExpireTimeout)
 }
 
-func (n *Notifier) SendMessage(m *Message) error {
-
+func (n *Notifier) Send(summary string, body string, urgency Urgency, expireTimeout int32) error {
 	return n.dbus.Call("org.freedesktop.Notifications.Notify", 0,
-		m.AppName,
-		m.ReplacesId,
-		m.AppIcon,
-		m.Summary,
-		m.Body,
-		m.Actions,
-		m.Hints,
-		m.ExpireTimeout,
+		n.app, // app_name
+		uint32(0), // replaces_id
+		"", // app_icon
+		summary, // summary
+		body, // body
+		[]string{}, // actions
+		map[string]dbus.Variant{"urgency": dbus.MakeVariant(urgency)}, // hints
+		expireTimeout,
 	).Err
-}
-
-func (n *Notifier) Send(Summary string, Body string, urgency Urgency, ExpireTimeout int32) error {
-	return n.SendMessage(&Message{
-		n.app,
-		0,
-		"",
-		Summary,
-		Body,
-		[]string{},
-		map[string]dbus.Variant{"urgency": dbus.MakeVariant(urgency)},
-		ExpireTimeout})
 }
