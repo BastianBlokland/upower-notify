@@ -7,6 +7,7 @@ package upower
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/godbus/dbus/v5"
@@ -17,7 +18,6 @@ var NoUpower = errors.New("Couldn't get org.freedesktop.UPower")
 type State int
 
 const (
-	// This order is inconsistent it seems. Feel free to change them.
 	Unknown State = iota
 	Charging
 	Discharging
@@ -195,44 +195,113 @@ type UPower struct {
 	dbus dbus.BusObject
 }
 
-func (u *UPower) Get() (Update, error) {
+func getProp[T any](probs map[string]dbus.Variant, key string) (T, error) {
+	v, ok := probs[key].Value().(T)
+	if !ok {
+		var zero T
+		return zero, fmt.Errorf("unexpected type for %s", key)
+	}
+	return v, nil
+}
 
+func (u *UPower) Get() (Update, error) {
 	probs := map[string]dbus.Variant{}
 	update := Update{}
 	err := u.dbus.Call("org.freedesktop.DBus.Properties.GetAll", 0, "org.freedesktop.UPower.Device").Store(&probs)
-
 	if err != nil {
 		return update, err
 	}
 
-	update.Capacity = probs["Capacity"].Value().(float64)
-	update.Energy = probs["Energy"].Value().(float64)
-	update.EnergyEmpty = probs["EnergyEmpty"].Value().(float64)
-	update.EnergyFull = probs["EnergyFull"].Value().(float64)
-	update.EnergyFullDesign = probs["EnergyFullDesign"].Value().(float64)
-	update.EnergyRate = probs["EnergyRate"].Value().(float64)
-	update.HasHistory = probs["HasHistory"].Value().(bool)
-	update.HasStatistics = probs["HasStatistics"].Value().(bool)
-	update.IconName = probs["IconName"].Value().(string)
-	update.IsPresent = probs["IsPresent"].Value().(bool)
-	update.IsRechargeable = probs["IsRechargeable"].Value().(bool)
-	update.Luminosity = probs["Luminosity"].Value().(float64)
-	update.Model = probs["Model"].Value().(string)
-	update.NativePath = probs["NativePath"].Value().(string)
-	update.Online = probs["Online"].Value().(bool)
-	update.Percentage = probs["Percentage"].Value().(float64)
-	update.PowerSupply = probs["PowerSupply"].Value().(bool)
-	update.Serial = probs["Serial"].Value().(string)
-	update.State = State(probs["State"].Value().(uint32))
-	update.Technology = probs["Technology"].Value().(uint32)
-	update.Temperature = probs["Temperature"].Value().(float64)
-	update.TimeToEmpty = time.Duration(time.Duration(probs["TimeToEmpty"].Value().(int64)) * time.Second)
-	update.TimeToFull = time.Duration(time.Duration(probs["TimeToFull"].Value().(int64)) * time.Second)
-	update.Type = probs["Type"].Value().(uint32)
-	update.UpdateTime = probs["UpdateTime"].Value().(uint64)
-	update.Vendor = probs["Vendor"].Value().(string)
-	update.Voltage = probs["Voltage"].Value().(float64)
-	update.WarningLevel = probs["WarningLevel"].Value().(uint32)
+	var stateRaw uint32
+	var timeToEmpty, timeToFull int64
 
-	return update, err
+	if update.Capacity, err = getProp[float64](probs, "Capacity"); err != nil {
+		return update, err
+	}
+	if update.Energy, err = getProp[float64](probs, "Energy"); err != nil {
+		return update, err
+	}
+	if update.EnergyEmpty, err = getProp[float64](probs, "EnergyEmpty"); err != nil {
+		return update, err
+	}
+	if update.EnergyFull, err = getProp[float64](probs, "EnergyFull"); err != nil {
+		return update, err
+	}
+	if update.EnergyFullDesign, err = getProp[float64](probs, "EnergyFullDesign"); err != nil {
+		return update, err
+	}
+	if update.EnergyRate, err = getProp[float64](probs, "EnergyRate"); err != nil {
+		return update, err
+	}
+	if update.HasHistory, err = getProp[bool](probs, "HasHistory"); err != nil {
+		return update, err
+	}
+	if update.HasStatistics, err = getProp[bool](probs, "HasStatistics"); err != nil {
+		return update, err
+	}
+	if update.IconName, err = getProp[string](probs, "IconName"); err != nil {
+		return update, err
+	}
+	if update.IsPresent, err = getProp[bool](probs, "IsPresent"); err != nil {
+		return update, err
+	}
+	if update.IsRechargeable, err = getProp[bool](probs, "IsRechargeable"); err != nil {
+		return update, err
+	}
+	if update.Luminosity, err = getProp[float64](probs, "Luminosity"); err != nil {
+		return update, err
+	}
+	if update.Model, err = getProp[string](probs, "Model"); err != nil {
+		return update, err
+	}
+	if update.NativePath, err = getProp[string](probs, "NativePath"); err != nil {
+		return update, err
+	}
+	if update.Online, err = getProp[bool](probs, "Online"); err != nil {
+		return update, err
+	}
+	if update.Percentage, err = getProp[float64](probs, "Percentage"); err != nil {
+		return update, err
+	}
+	if update.PowerSupply, err = getProp[bool](probs, "PowerSupply"); err != nil {
+		return update, err
+	}
+	if update.Serial, err = getProp[string](probs, "Serial"); err != nil {
+		return update, err
+	}
+	if stateRaw, err = getProp[uint32](probs, "State"); err != nil {
+		return update, err
+	}
+	update.State = State(stateRaw)
+	if update.Technology, err = getProp[uint32](probs, "Technology"); err != nil {
+		return update, err
+	}
+	if update.Temperature, err = getProp[float64](probs, "Temperature"); err != nil {
+		return update, err
+	}
+	if timeToEmpty, err = getProp[int64](probs, "TimeToEmpty"); err != nil {
+		return update, err
+	}
+	update.TimeToEmpty = time.Duration(timeToEmpty) * time.Second
+	if timeToFull, err = getProp[int64](probs, "TimeToFull"); err != nil {
+		return update, err
+	}
+	update.TimeToFull = time.Duration(timeToFull) * time.Second
+	if update.Type, err = getProp[uint32](probs, "Type"); err != nil {
+		return update, err
+	}
+	if update.UpdateTime, err = getProp[uint64](probs, "UpdateTime"); err != nil {
+		return update, err
+	}
+	if update.Vendor, err = getProp[string](probs, "Vendor"); err != nil {
+		return update, err
+	}
+	if update.Voltage, err = getProp[float64](probs, "Voltage"); err != nil {
+		return update, err
+	}
+	if update.WarningLevel, err = getProp[uint32](probs, "WarningLevel"); err != nil {
+		return update, err
+	}
+
+	return update, nil
 }
