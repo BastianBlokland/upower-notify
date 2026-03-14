@@ -11,6 +11,14 @@ import (
 	"upower-notify/ppd"
 )
 
+const (
+	lowBatteryThreshold    = 10.0
+	mediumBatteryThreshold = 20.0
+	notifyStepLow          = 1
+	notifyStepMedium       = 5
+	notifyStepDefault      = 20
+)
+
 var (
 	initialOnly        bool
 	tick               time.Duration
@@ -84,12 +92,12 @@ func main() {
 
 			var notifyStep uint32
 			switch {
-			case !charging && update.Percentage < 10:
-				notifyStep = 1
-			case !charging && update.Percentage < 20:
-				notifyStep = 5
+			case !charging && update.Percentage < lowBatteryThreshold:
+				notifyStep = notifyStepLow
+			case !charging && update.Percentage < mediumBatteryThreshold:
+				notifyStep = notifyStepMedium
 			default:
-				notifyStep = 20
+				notifyStep = notifyStepDefault
 			}
 
 			stateChanged := update.State != old.State
@@ -162,7 +170,7 @@ func notifyState(battery upower.Update, profileState ppd.State, notifier *notify
 	if profileState.ActiveProfile != "" {
 		msg += fmt.Sprintf(" (%s profile)", profileState.ActiveProfile)
 	}
-	if invalidState || battery.Percentage < 10 {
+	if invalidState || battery.Percentage < lowBatteryThreshold {
 		notifier.Critical("Battery", msg, notificationExpiryMilliseconds)
 	} else {
 		notifier.Normal("Battery", msg, notificationExpiryMilliseconds)
