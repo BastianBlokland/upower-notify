@@ -57,12 +57,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	powerProfileDaemon := ppd.New(dbusConnSystem)
+	pd := ppd.New(dbusConnSystem)
 	var profileState ppd.State
-	profileState, err = powerProfileDaemon.Get()
+	profileState, err = pd.Get()
 	if err != nil {
 		// PPD is optional; if unavailable treat it as absent.
-		powerProfileDaemon = nil
+		pd = nil
 	}
 
 	notifier := notify.New(dbusConnSession, "Upower Notify")
@@ -78,8 +78,8 @@ func main() {
 	if err := up.AddMatchSignal(dbusConnSystem); err != nil {
 		log.Fatal(err)
 	}
-	if powerProfileDaemon != nil {
-		if err := powerProfileDaemon.AddMatchSignal(dbusConnSystem); err != nil {
+	if pd != nil {
+		if err := pd.AddMatchSignal(dbusConnSystem); err != nil {
 			log.Fatal(err)
 		}
 	}
@@ -101,8 +101,8 @@ func main() {
 		}
 		update = newUpdate
 
-		if powerProfileDaemon != nil {
-			newProfileState, err := powerProfileDaemon.Get()
+		if pd != nil {
+			newProfileState, err := pd.Get()
 			if err != nil {
 				notifier.Critical("Battery", fmt.Sprintf("Profile (PPD) query failed: %s", err), notificationExpiryMilliseconds)
 				continue
