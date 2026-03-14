@@ -123,7 +123,7 @@ func main() {
 				notifyStep = notifyStepDefault
 			}
 
-			stateChanged := update.State != old.State
+			stateChanged := update.State != old.State && update.State != upower.PendingCharge && update.State != upower.PendingDischarge
 			profileChanged := profileState.ActiveProfile != oldProfileState.ActiveProfile
 			percentageChanged := (uint32(update.Percentage)/notifyStep) != (uint32(lastNotifyPercentage)/notifyStep)
 
