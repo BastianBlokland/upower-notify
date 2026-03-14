@@ -63,15 +63,20 @@ func main() {
 	var oldProfileState = profileState
 	var lastNotifyPercentage = old.Percentage
 	for range time.Tick(tick) {
-		update, err = up.Get()
+		newUpdate, err := up.Get()
 		if err != nil {
 			notifier.Critical("Battery", fmt.Sprintf("Query failed: %s", err), notificationExpiryMilliseconds)
+			continue
 		}
+		update = newUpdate
+
 		if powerProfileDaemon != nil {
-			profileState, err = powerProfileDaemon.Get();
+			newProfileState, err := powerProfileDaemon.Get()
 			if err != nil {
 				notifier.Critical("Battery", fmt.Sprintf("Profile (PPD) query failed: %s", err), notificationExpiryMilliseconds)
+				continue
 			}
+			profileState = newProfileState
 		}
 
 		if update.Changed(old) || profileState.Changed(oldProfileState) {
