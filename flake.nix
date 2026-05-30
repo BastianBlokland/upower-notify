@@ -2,7 +2,7 @@
   description = "upower-notify";
 
   inputs = {
-    nixpkgs.url = "nixpkgs/nixos-25.11";
+    nixpkgs.url = "nixpkgs/nixos-26.05";
   };
 
   outputs =
@@ -30,7 +30,7 @@
 
       devShells.${system}.default = pkgs.mkShell {
         packages = [
-          pkgs.nixfmt-rfc-style
+          pkgs.nixfmt
 
           pkgs.go
           pkgs.gopls
